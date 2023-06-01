@@ -51,6 +51,7 @@ private:
 	void OnDraw(CPoint endPoint);
 	void OnDraw();
 	void OnSplit(CString value, CString phraser, CStringArray& strs);
+	void AreaDraw();
 
 	BOOL m_bChecked;
 	int m_cx;

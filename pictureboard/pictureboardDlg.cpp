@@ -175,15 +175,7 @@ void CpictureboardDlg::OnPaint()
 	}
 	else
 	{
-		CPaintDC dc(this); // 그리기를 위한 디바이스 컨텍스트입니다.
-
-		POSITION pos = m_ModelList.GetHeadPosition();
-		_SModel next;
-		while (pos)
-		{
-			next = m_ModelList.GetNext(pos);
-			OnDraw(next.m_iDrawMode, next.m_cpStart, next.m_cpEnd);
-		}
+		AreaDraw();
 		//CDialogEx::OnPaint();
 	}
 }
@@ -629,12 +621,15 @@ void CpictureboardDlg::OnMouseMove(UINT nFlags, CPoint point)
 			lc.Rectangle(rect_start_pos.x, rect_start_pos.y, m_prevXY.x, m_prevXY.y);
 			dc.Rectangle(rect_start_pos.x, rect_start_pos.y, point.x, point.y);
 			m_prevXY = point;
+			AreaDraw();
+
 		}
 		else if (m_nDrawMode == CIRCLE)
 		{
 			lc.Ellipse(rect_start_pos.x, rect_start_pos.y, m_prevXY.x, m_prevXY.y);
 			dc.Ellipse(rect_start_pos.x, rect_start_pos.y, point.x, point.y); // 원 그리기
 			m_prevXY = point;
+			AreaDraw();
 		}
 		else if (m_nDrawMode == TRIANGLE)
 		{
@@ -643,6 +638,7 @@ void CpictureboardDlg::OnMouseMove(UINT nFlags, CPoint point)
 			POINT arPoint[] = { rect_start_pos.x, rect_start_pos.y , rect_start_pos.x - 40, point.y + 45, point.x , point.y }; // 삼각형 함수 그리기
 			dc.Polygon(arPoint, 3);
 			m_prevXY = point;
+			AreaDraw();
 		}
 		else if (m_nDrawMode == STRAIGHT)
 		{
@@ -651,9 +647,20 @@ void CpictureboardDlg::OnMouseMove(UINT nFlags, CPoint point)
 			dc.MoveTo(rect_start_pos.x, rect_start_pos.y);
 			dc.LineTo(point.x, point.y);
 			m_prevXY = point;
+			AreaDraw();
 		}
 	}
 }
 
+void CpictureboardDlg::AreaDraw()
+{
+	CPaintDC dc(this); // 그리기를 위한 디바이스 컨텍스트입니다.
 
-
+	POSITION pos = m_ModelList.GetHeadPosition();
+	_SModel next;
+	while (pos)
+	{
+		next = m_ModelList.GetNext(pos);
+		OnDraw(next.m_iDrawMode, next.m_cpStart, next.m_cpEnd);
+	}
+}
