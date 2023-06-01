@@ -11,6 +11,7 @@
 #define IDR_TOOLBAR1                    131
 #define IDR_TOOLBAR2                    132
 #define IDB_BITMAP1                     133
+#define IDC_MFCCOLORBUTTON1             1006
 #define ID_32771                        32771
 #define ID_32772                        32772
 #define ID_32773                        32773
@@ -29,14 +30,21 @@
 #define ID_COLOR_3                      32793
 #define ID_COLOR_4                      32794
 #define ID_COLOR_5                      32795
+#define ID_32796                        32796
+#define ID_IMGSAVE                      32797
+#define ID_32798                        32798
+#define ID_IMGLOAD                      32799
+#define ID_BUTTON32800                  32800
+#define ID_BUTTON32801                  32801
+#define ID_RESET                        32804
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        137
-#define _APS_NEXT_COMMAND_VALUE         32796
-#define _APS_NEXT_CONTROL_VALUE         1005
+#define _APS_NEXT_RESOURCE_VALUE        138
+#define _APS_NEXT_COMMAND_VALUE         32805
+#define _APS_NEXT_CONTROL_VALUE         1007
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -35,20 +35,43 @@ protected:
 private:
 	void InitToolBar();
 	CToolBar m_wndToolBar;
-	void OnDropDownCommand(UINT nID);
-	void OnUpdate(CCmdUI* pCmdUI);
 
+
+	// 도형관리를 위한 구조체 선언
+	struct _SModel {
+		int m_iCnt =0;
+		int m_iDrawMode;
+		CPoint m_cpStart;
+		CPoint m_cpEnd;
+	};
+	CList<_SModel, _SModel&> m_ModelList;
+	_SModel OnMakeModel(int type, CPoint startPoint, CPoint endPoint);
+
+	void OnDraw(int type, CPoint startPoint, CPoint endPoint);
+	void OnDraw(CPoint endPoint);
+	void OnDraw();
+	void OnSplit(CString value, CString phraser, CStringArray& strs);
+
+	BOOL m_bChecked;
+	int m_cx;
+	int m_cy;
+	CPoint m_prevXY;
 public:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnImageSave();
 	CPoint rect_start_pos;
 	int m_nDrawMode;
 
 	afx_msg void OnSquare();
 	afx_msg void OnCircle();
 	afx_msg void OnTriangle();
-	void InitCheckButton();
+	void InitCheckButton(int value1, int value2, int value3);
 	afx_msg void OnStraight();
+	afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint /*point*/);
+	afx_msg void OnImgload();
+	afx_msg void OnReset();
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 };
