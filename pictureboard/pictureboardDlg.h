@@ -35,36 +35,50 @@ protected:
 private:
 	void InitToolBar();
 	CToolBar m_wndToolBar;
-
+	CMenu m_Color_DropDown;
 
 	// 도형관리를 위한 구조체 선언
-	struct _SModel {
-		int m_iCnt =0;
+	struct _SModel
+	{
+		int m_iCnt = 0;
 		int m_iDrawMode;
 		CPoint m_cpStart;
 		CPoint m_cpEnd;
+		BOOL m_isClick = FALSE;
+		int m_sR;
+		int m_sG;
+		int m_sb;
 	};
 	CList<_SModel, _SModel&> m_ModelList;
-	_SModel OnMakeModel(int type, CPoint startPoint, CPoint endPoint);
+	_SModel OnMakeModel(int type, CPoint startPoint, CPoint endPoint );
 
-	void OnDraw(int type, CPoint startPoint, CPoint endPoint);
-	void OnDraw(CPoint endPoint);
-	void OnDraw();
+	void OnDraw(int type, CPoint startPoint, CPoint endPoint); // 무효화 영역 발생시 복구
+	void OnDraw(CPoint endPoint); // 
 	void OnSplit(CString value, CString phraser, CStringArray& strs);
-	void AreaDraw();
+	void AreaDraw();// 마우스 드래그시 미리보기
 
+	void SquareDraw(CClientDC &dc, CPoint startPoint, CPoint endPoint);
+	void CircleDraw(CClientDC &dc, CPoint startPoint, CPoint endPoint);
+	void TriangleDraw(CClientDC &dc, CPoint startPoint, CPoint endPoint);
+	void StraightDraw(CClientDC &dc,CPoint startPoint, CPoint endPoint);
+	
+	void OnDropDownMenu(UINT nID);
 	BOOL m_bChecked;
+	CPoint m_prevXY;
+	CPoint m_rect_start_pos;
 	int m_cx;
 	int m_cy;
-	CPoint m_prevXY;
-public:
+	int m_pos;
+	int m_mainMode;
+	int m_subMode;
+	int m_gR;
+	int m_gG;
+	int m_gB;
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnImageSave();
-	CPoint rect_start_pos;
-	int m_nDrawMode;
 
 	afx_msg void OnSquare();
 	afx_msg void OnCircle();
@@ -75,4 +89,8 @@ public:
 	afx_msg void OnImgload();
 	afx_msg void OnReset();
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	
+	void CpictureboardDlg::ChoiceView();
+public:
+	afx_msg void OnColor();
 };
