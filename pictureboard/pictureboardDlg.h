@@ -47,12 +47,12 @@ private:
 		BOOL m_isClick = FALSE;
 		int m_sR;
 		int m_sG;
-		int m_sb;
+		int m_sB;
 	};
 	CList<_SModel, _SModel&> m_ModelList;
 	_SModel OnMakeModel(int type, CPoint startPoint, CPoint endPoint );
 
-	void OnDraw(int type, CPoint startPoint, CPoint endPoint); // 무효화 영역 발생시 복구
+	void OnDraw(int type, CPoint startPoint, CPoint endPoint, int R, int G, int B); // 무효화 영역 발생시 복구
 	void OnDraw(CPoint endPoint); // 
 	void OnSplit(CString value, CString phraser, CStringArray& strs);
 	void AreaDraw();// 마우스 드래그시 미리보기
@@ -87,7 +87,7 @@ private:
 	afx_msg void OnStraight();
 	afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint /*point*/);
 	afx_msg void OnImgload();
-	afx_msg void OnReset();
+	afx_msg void OnReset(CDC* pDC);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	
 	void CpictureboardDlg::ChoiceView();

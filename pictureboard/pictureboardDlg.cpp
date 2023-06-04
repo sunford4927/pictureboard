@@ -7,7 +7,7 @@
 #include "pictureboard.h"
 #include "pictureboardDlg.h"
 #include "afxdialogex.h"
-
+#include "DrawBox.h"
 #include <locale.h> // 글자 깨짐 방지
 
 #ifdef _DEBUG
@@ -95,11 +95,13 @@ BEGIN_MESSAGE_MAP(CpictureboardDlg, CDialogEx)
 	ON_COMMAND(ID_IMGSAVE, &CpictureboardDlg::OnImageSave)
 //	ON_WM_CONTEXTMENU()
 	ON_COMMAND(ID_IMGLOAD, &CpictureboardDlg::OnImgload)
-	ON_COMMAND(ID_RESET, &CpictureboardDlg::OnReset)
+	ON_COMMAND(ID_RESET, &CpictureboardDlg::OnEraseBkgnd)
 	ON_WM_MOUSEMOVE()
 	ON_COMMAND(ID_COLOR, &CpictureboardDlg::ChoiceView)
 	ON_COMMAND_RANGE(ID_COLOR_1, ID_COLOR_1 +1, OnDropDownMenu)
 END_MESSAGE_MAP()
+
+
 
 
 // CpictureboardDlg 메시지 처리기
@@ -136,8 +138,9 @@ BOOL CpictureboardDlg::OnInitDialog()
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
 	//m_pos = nullptr;
-
-
+	m_gR = 0;
+	m_gG = 0;
+	m_gB = 0;
 	InitToolBar();
 	m_subMode = NONE;
 	m_mainMode = NONE;
@@ -465,6 +468,9 @@ CpictureboardDlg::_SModel CpictureboardDlg::OnMakeModel(int type, CPoint startPo
 	model.m_cpEnd = endPoint;
 	model.m_iCnt+=1;
 	model.m_isClick =FALSE;
+	model.m_sR = m_gR;
+	model.m_sG = m_gG;
+	model.m_sB = m_gB;
 	return model;
 }
 
@@ -472,7 +478,7 @@ void CpictureboardDlg::OnDraw(CPoint endPoint)
 {
 	_SModel model;
 	CClientDC dc(this); // DC 생성
-	CPen my_pen(PS_SOLID, 5, RGB(0, 0, 255)); // 굵기가 5인 팬을 생성한다.
+	CPen my_pen(PS_SOLID, 5, RGB(m_gR, m_gG, m_gB)); // 굵기가 5인 팬을 생성한다.
 	dc.SelectObject(&my_pen); // 생성한 팬을 DC에 연결한다.
 	SelectObject(dc, GetStockObject(NULL_BRUSH));// 안이 투명한 도형을 그려주기 위해 NULL 브러쉬를 만든다.
 
@@ -505,10 +511,10 @@ void CpictureboardDlg::OnDraw(CPoint endPoint)
 	}
 }
 
-void CpictureboardDlg::OnDraw(int type, CPoint startPoint, CPoint endPoint)
+void CpictureboardDlg::OnDraw(int type, CPoint startPoint, CPoint endPoint,int R, int G, int B)
 {
 	CClientDC dc(this); // DC 생성
-	CPen my_pen(PS_SOLID, 5, RGB(0, 0, 255)); // 굵기가 5인 팬을 생성한다.
+	CPen my_pen(PS_SOLID, 5, RGB(R, G, B)); // 굵기가 5인 팬을 생성한다.
 	dc.SelectObject(&my_pen); // 생성한 팬을 DC에 연결한다.
 	SelectObject(dc, GetStockObject(NULL_BRUSH));// 안이 투명한 도형을 그려주기 위해 NULL 브러쉬를 만든다.
 
@@ -529,7 +535,6 @@ void CpictureboardDlg::OnDraw(int type, CPoint startPoint, CPoint endPoint)
 	{
 		StraightDraw(dc,startPoint,endPoint);
 	}
-	
 }
 
 void CpictureboardDlg::OnImageSave()
@@ -684,12 +689,11 @@ void CpictureboardDlg::OnSplit(CString value, CString phraser, CStringArray& str
 	}
 }
 
-void CpictureboardDlg::OnReset()
+void CpictureboardDlg::OnReset(CDC* pDC)
 {
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	Invalidate(TRUE);
-	Invalidate(FALSE);
-	RedrawWindow();
+	CRect rect;
+	GetClientRect(&rect);
+	pDC->FillSolidRect(rect, RGB(255, 255, 255));
 }
 
 
@@ -704,7 +708,7 @@ void CpictureboardDlg::OnMouseMove(UINT nFlags, CPoint point)
 		CPen clear_pen(PS_SOLID, 5, RGB(255, 255, 255));
 		lc.SelectObject(&clear_pen);
 		SelectObject(lc, GetStockObject(NULL_BRUSH));
-		CPen my_pen(PS_SOLID, 5, RGB(0, 0, 255)); // 굵기가 5인 팬을 생성한다.
+		CPen my_pen(PS_SOLID, 5, RGB(m_gR, m_gG, m_gB)); // 굵기가 5인 팬을 생성한다.
 		dc.SelectObject(&my_pen); // 생성한 팬을 DC에 연결한다.
 		SelectObject(dc, GetStockObject(NULL_BRUSH));// 안이 투명한 도형을 그려주기 위해 NULL 브러쉬를 만든다.
 
@@ -754,7 +758,7 @@ void CpictureboardDlg::AreaDraw()
 	while (pos)
 	{
 		next = m_ModelList.GetNext(pos);
-		OnDraw(next.m_iDrawMode, next.m_cpStart, next.m_cpEnd);
+		OnDraw(next.m_iDrawMode, next.m_cpStart, next.m_cpEnd, next.m_sR, next.m_sG, next.m_sB);
 	}
 }
 
@@ -818,4 +822,6 @@ void CpictureboardDlg::OnDropDownMenu(UINT nID)
 	CWnd* pWnd = GetDlgItem(nID);
 	pWnd->GetWindowRect(&rect);
 	m_Color_DropDown.GetSubMenu(0)->TrackPopupMenu(TPM_LEFTALIGN | TPM_LEFTBUTTON , rect.left, rect.bottom, this);
+
 }
+
