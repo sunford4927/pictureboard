@@ -9,23 +9,29 @@
 #include "afxdialogex.h"
 #include "DrawBox.h"
 #include <locale.h> // 글자 깨짐 방지
+#include <cmath>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
+
+#define RADIAN_TO_DEGREE(radian) ((180/pi)*(radian))
 #define PRINTPATH "/"
-#define MAX_FOLYLINE 10;
+#define MAX_POLYLINE 15;
+
 
 #define NONE 0
 
-#define DRAW 1
-#define	CHOICE 2
+#define RESET 1
+#define DRAW 2
+#define	CHOICE 3
 
-#define SQUARE	3 // 사각형
-#define CIRCLE	4 // 원
-#define TRIANGLE	5 // 삼각형
-#define STRAIGHT	6 // 직선
+#define SQUARE	4 // 사각형
+#define CIRCLE	5 // 원
+#define TRIANGLE	6 // 삼각형
+#define STRAIGHT	7 // 직선
+#define POLYLINE	8 // 폴리선
 
 
 // 응용 프로그램 정보에 사용되는 CAboutDlg 대화 상자입니다.
@@ -95,10 +101,11 @@ BEGIN_MESSAGE_MAP(CpictureboardDlg, CDialogEx)
 	ON_COMMAND(ID_IMGSAVE, &CpictureboardDlg::OnImageSave)
 //	ON_WM_CONTEXTMENU()
 	ON_COMMAND(ID_IMGLOAD, &CpictureboardDlg::OnImgload)
-	ON_COMMAND(ID_RESET, &CpictureboardDlg::OnEraseBkgnd)
+	ON_COMMAND(ID_RESET, &CpictureboardDlg::OnReset)
 	ON_WM_MOUSEMOVE()
-	ON_COMMAND(ID_COLOR, &CpictureboardDlg::ChoiceView)
 	ON_COMMAND_RANGE(ID_COLOR_1, ID_COLOR_1 +1, OnDropDownMenu)
+	ON_COMMAND(ID_ERASER, &CpictureboardDlg::OnEraser)
+	ON_COMMAND(ID_POLY, &CpictureboardDlg::OnPolyline)
 END_MESSAGE_MAP()
 
 
@@ -138,6 +145,7 @@ BOOL CpictureboardDlg::OnInitDialog()
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
 	//m_pos = nullptr;
+	m_circleCnt = 0;
 	m_gR = 0;
 	m_gG = 0;
 	m_gB = 0;
@@ -207,7 +215,6 @@ void CpictureboardDlg::InitToolBar()
 	{
 	EndDialog(IDCANCEL);
 	}
-
 	CRect rcClientStart;
 	CRect rcClientNow;
 
@@ -277,6 +284,8 @@ void CpictureboardDlg::OnLButtonDown(UINT nFlags, CPoint point)
 		POSITION pos = m_ModelList.GetHeadPosition();
 		_SModel next;
 		int idx = 0;
+
+
 		while (pos)
 		{
 			next = m_ModelList.GetNext(pos);
@@ -308,13 +317,22 @@ void CpictureboardDlg::OnLButtonUp(UINT nFlags, CPoint point)
 	SelectObject(lc, GetStockObject(NULL_BRUSH));
 	if (m_mainMode == DRAW)
 	{
-		OnDraw(point);
+		if (m_subMode == POLYLINE)
+		{
+
+		}
+		else
+		{
+			OnDraw(point);
+
+		}
+
 	}
 
 	if (m_mainMode == CHOICE)
 	{
-		CPoint move_pos;
-		CPoint prev_pos;
+		CPoint move_pos; // 이동 좌표
+		CPoint prev_pos; // 이전 좌표
 		// 마우스가 이동한 거리를 계산
 		m_rect_start_pos = m_ModelList.GetAt(m_ModelList.FindIndex(m_pos)).m_cpStart;
 
@@ -337,7 +355,7 @@ void CpictureboardDlg::OnLButtonUp(UINT nFlags, CPoint point)
 			m_mainMode = NONE;
 			break;
 		case CIRCLE:
-			CircleDraw(lc, m_rect_start_pos, prev_pos);
+			CircleDraw(lc,  prev_pos);
 			AreaDraw();
 			m_ModelList.GetAt(m_ModelList.FindIndex(m_pos)).m_isClick = false;
 			m_mainMode = NONE;
@@ -359,90 +377,41 @@ void CpictureboardDlg::OnLButtonUp(UINT nFlags, CPoint point)
 	}
 	
 	
-	if (nFlags & MK_CONTROL); // 컨트롤 키가 눌려졌을때
+
 
 	CDialogEx::OnLButtonUp(nFlags, point);
 }
 
-void CpictureboardDlg::OnSquare()
-{
-	if (m_subMode == SQUARE) {
-		// 버튼이 이미 선택된 상태이므로 선택 해제한다.
-		m_mainMode = NONE;
-		m_subMode = NONE;
-		m_wndToolBar.GetToolBarCtrl().CheckButton(ID_SQUARE, FALSE);
-	}
-	else {
-		// 다른 버튼들의 선택을 해제하고 현재 버튼을 선택한다.
-		InitCheckButton(ID_CIRCLE, ID_TRIANGLE, ID_STRAIGHT);
-		m_mainMode = DRAW;
-		m_subMode = SQUARE;
-		m_wndToolBar.GetToolBarCtrl().CheckButton(ID_SQUARE, TRUE);
-	}
-}
-
-void CpictureboardDlg::OnCircle()
-{
-	if (m_subMode == CIRCLE) {
-		// 버튼이 이미 선택된 상태이므로 선택 해제한다.
-		m_subMode = NONE;
-		m_mainMode = NONE;
-		m_wndToolBar.GetToolBarCtrl().CheckButton(ID_CIRCLE, FALSE);
-	}
-	else {
-		// 다른 버튼들의 선택을 해제하고 현재 버튼을 선택한다.
-		m_mainMode = DRAW;
-		InitCheckButton(ID_SQUARE, ID_TRIANGLE, ID_STRAIGHT);
-		m_subMode = CIRCLE;
-		m_wndToolBar.GetToolBarCtrl().CheckButton(ID_CIRCLE, TRUE);
-	}
-}
-
-void CpictureboardDlg::OnTriangle()
-{
-	if (m_subMode == TRIANGLE) {
-		// 버튼이 이미 선택된 상태이므로 선택 해제한다.
-		m_subMode = NONE;
-		m_mainMode = NONE;
-		m_wndToolBar.GetToolBarCtrl().CheckButton(ID_TRIANGLE, FALSE);
-	}
-	else {
-		// 다른 버튼들의 선택을 해제하고 현재 버튼을 선택한다.
-		m_mainMode = DRAW;
-		InitCheckButton(ID_SQUARE, ID_CIRCLE, ID_STRAIGHT);
-		m_subMode = TRIANGLE;
-		m_wndToolBar.GetToolBarCtrl().CheckButton(ID_TRIANGLE, TRUE);
-	}
-}
-
-void CpictureboardDlg::OnStraight()
-{
-	if (m_subMode == STRAIGHT) {
-		// 버튼이 이미 선택된 상태이므로 선택 해제한다.
-		m_subMode = NONE;
-		m_mainMode = NONE;
-		m_wndToolBar.GetToolBarCtrl().CheckButton(ID_STRAIGHT, FALSE);
-	}
-	else {
-		// 다른 버튼들의 선택을 해제하고 현재 버튼을 선택한다.
-		InitCheckButton(ID_SQUARE, ID_CIRCLE, ID_TRIANGLE);
-		m_subMode = STRAIGHT;
-		m_mainMode = DRAW;
-		m_wndToolBar.GetToolBarCtrl().CheckButton(ID_STRAIGHT, TRUE);
-	}
-}
 
 
-void CpictureboardDlg::InitCheckButton(int value1,int value2,int value3)
+void CpictureboardDlg::InitCheckButton(int value1,int value2,int value3, int value4)
 {
-	//m_wndToolBar.GetToolBarCtrl().CheckButton(ID_SQUARE, FALSE);
 	m_wndToolBar.GetToolBarCtrl().CheckButton(value1, FALSE);
 	m_wndToolBar.GetToolBarCtrl().CheckButton(value2, FALSE);
 	m_wndToolBar.GetToolBarCtrl().CheckButton(value3, FALSE);
+	m_wndToolBar.GetToolBarCtrl().CheckButton(value4, FALSE);
 }
 
 
 
+void CpictureboardDlg::DrawMode(int id1, int id2, int id3, int id4, int id5, int subid )
+{
+	if (m_subMode == subid) {
+		// 버튼이 이미 선택된 상태이므로 선택 해제한다.
+		m_subMode = NONE;
+		m_mainMode = NONE;
+		m_wndToolBar.GetToolBarCtrl().CheckButton(id1, FALSE);
+		m_circleCnt = 0;
+		m_polyLineCnt = 0;
+	}
+	else {
+		// 다른 버튼들의 선택을 해제하고 현재 버튼을 선택한다.
+		InitCheckButton(id2, id3, id4, id5);
+		m_subMode = subid;
+		m_mainMode = DRAW;
+		m_wndToolBar.GetToolBarCtrl().CheckButton(id1, TRUE);
+	}
+}
 
 
 //void CpictureboardDlg::OnContextMenu(CWnd* pWnd, CPoint point)
@@ -492,7 +461,7 @@ void CpictureboardDlg::OnDraw(CPoint endPoint)
 		}
 		else if (m_subMode == CIRCLE)
 		{
-			CircleDraw(dc, m_rect_start_pos, endPoint);
+			CircleDraw(dc,  endPoint);
 			model = OnMakeModel(m_subMode, m_rect_start_pos, endPoint);
 			m_ModelList.AddTail(model);
 		}
@@ -508,6 +477,11 @@ void CpictureboardDlg::OnDraw(CPoint endPoint)
 			model = OnMakeModel(m_subMode, m_rect_start_pos, endPoint);
 			m_ModelList.AddTail(model);
 		}
+		//else if (m_subMode == POLYLINE)
+		//{
+		//	PolyLineDraw(dc, m_rect_start_pos, endPoint);
+		//	model = OnMakeModel(m_subMode, m_rect_start_pos, endPoint);
+		//}
 	}
 }
 
@@ -525,7 +499,7 @@ void CpictureboardDlg::OnDraw(int type, CPoint startPoint, CPoint endPoint,int R
 	}
 	else if (type == CIRCLE)
 	{
-		CircleDraw(dc, startPoint, endPoint);
+		CircleDraw(dc, endPoint);
 	}
 	else if (type == TRIANGLE)
 	{
@@ -689,11 +663,12 @@ void CpictureboardDlg::OnSplit(CString value, CString phraser, CStringArray& str
 	}
 }
 
-void CpictureboardDlg::OnReset(CDC* pDC)
+void CpictureboardDlg::OnReset()
 {
-	CRect rect;
-	GetClientRect(&rect);
-	pDC->FillSolidRect(rect, RGB(255, 255, 255));
+	m_mainMode = RESET;
+	AreaDraw();
+	m_ModelList.RemoveAll();
+	m_mainMode = NONE;
 }
 
 
@@ -725,8 +700,8 @@ void CpictureboardDlg::OnMouseMove(UINT nFlags, CPoint point)
 		}
 		else if (m_subMode == CIRCLE)
 		{
-			CircleDraw(lc, m_rect_start_pos, m_prevXY);
-			CircleDraw(dc, m_rect_start_pos, point);
+			CircleDraw(lc, m_prevXY);
+			CircleDraw(dc, point);
 			m_prevXY = point;
 			AreaDraw();
 		}
@@ -758,51 +733,21 @@ void CpictureboardDlg::AreaDraw()
 	while (pos)
 	{
 		next = m_ModelList.GetNext(pos);
-		OnDraw(next.m_iDrawMode, next.m_cpStart, next.m_cpEnd, next.m_sR, next.m_sG, next.m_sB);
+		if (m_mainMode == RESET)
+		{
+			OnDraw(next.m_iDrawMode, next.m_cpStart, next.m_cpEnd, 255, 255, 255);
+		}
+		else
+		{
+			OnDraw(next.m_iDrawMode, next.m_cpStart, next.m_cpEnd, next.m_sR, next.m_sG, next.m_sB);
+		}
 	}
 }
 
-void CpictureboardDlg::SquareDraw(CClientDC &dc, CPoint startPoint, CPoint endPoint)
-{
-	dc.Rectangle(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
-}
-
-void CpictureboardDlg::CircleDraw(CClientDC &dc, CPoint startPoint, CPoint endPoint)
-{
-	dc.Ellipse(startPoint.x, startPoint.y, endPoint.x, endPoint.y); // 원 그리기
-}
-
-void CpictureboardDlg::TriangleDraw(CClientDC &dc, CPoint startPoint, CPoint endPoint)
-{
-	POINT arPoint[] = { startPoint.x, startPoint.y , startPoint.x - 40, endPoint.y + 45, endPoint.x , endPoint.y }; // 삼각형 함수 그리기
-	dc.Polygon(arPoint, 3);
-}
-
-void CpictureboardDlg::StraightDraw(CClientDC &dc,CPoint startPoint, CPoint endPoint)
-{
-
-	dc.MoveTo(startPoint.x, startPoint.y);
-	dc.LineTo(endPoint.x, endPoint.y);
-}
 
 
 
-void CpictureboardDlg::OnColor()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	// 컨텍스트 메뉴 생성
-	CMenu menu;
-	menu.CreatePopupMenu();
-
-	// 메뉴를 추가
-	menu.AppendMenu(MF_STRING, 2001, _T("Menu 1"));
-	menu.AppendMenu(MF_STRING, 2001, _T("Menu 1"));
-	menu.AppendMenu(MF_STRING, 2001, _T("Menu 1"));
-	// 컨텍스트  메뉴를 x,y 좌표에 출력합니다.
-	menu.TrackPopupMenu(TPM_LEFTALIGN, m_rect_start_pos.x, m_rect_start_pos.y, AfxGetMainWnd());
-}
-
-void CpictureboardDlg::ChoiceView()
+void CpictureboardDlg::ChoiceColor()
 {
 	CColorDialog dlg;
 	if (dlg.DoModal() == IDOK)
@@ -824,4 +769,141 @@ void CpictureboardDlg::OnDropDownMenu(UINT nID)
 	m_Color_DropDown.GetSubMenu(0)->TrackPopupMenu(TPM_LEFTALIGN | TPM_LEFTBUTTON , rect.left, rect.bottom, this);
 
 }
+
+
+void CpictureboardDlg::SquareDraw(CClientDC& dc, CPoint startPoint, CPoint endPoint)
+{
+	dc.Rectangle(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+}
+
+void CpictureboardDlg::CircleDraw(CClientDC& dc, CPoint point)
+{
+	// 버전 원
+	//m_circlePoint[m_circleCnt].x = point.x;
+	//m_circlePoint[m_circleCnt].y = point.y;
+	//double lastX = 0;
+	//double lastY = 0;
+	//if (m_circleCnt == 2)
+	//{
+	//	double radius= sqrt((double)pow((double)m_circlePoint[0].x - (double)m_circlePoint[1].x, 2) + (double)pow((double)m_circlePoint[0].y - (double)m_circlePoint[1].y, 2));
+
+	//	if ()
+	//	{
+	//		for (int i = 0; i < 180; i++)
+	//		{
+	//			double newX = (double) m_circlePoint[0].x + cos((double)i / 180 * 3.1415) * radius;
+	//			double newY = (double) m_circlePoint[0].y + sin((double)i / 180 * 3.1415) * radius;
+	//			if (i == 0)
+	//			{
+	//				lastX = newX;
+	//				lastY = newY;
+
+	//			}
+	//			dc.MoveTo((double)lastX, (double)lastY);
+	//			dc.LineTo((double)newX, (double)newY);
+
+	//			lastX = newX;
+	//			lastY = newY;
+	//		}
+	//			m_circleCnt -= 2;
+
+	//	}
+	//}
+	//m_circleCnt++;
+	m_circlePoint[m_circleCnt].x = point.x;
+	m_circlePoint[m_circleCnt].y = point.y;
+	if (m_circleCnt == 2)
+	{
+
+		double pi = 3.1415926535897932384626433832795; // PI
+		double radius = sqrt((double)pow((double)m_circlePoint[0].x - (double)m_circlePoint[1].x, 2) + (double)pow((double)m_circlePoint[0].y - (double)m_circlePoint[1].y, 2));
+
+		int vertex = 27; // 꼭지점
+
+		// 중심점은 반지름보다 (10, 10) 큰 위치
+		double beetwin_Angle = atan((m_circlePoint[1].y - m_circlePoint[0].y) / (m_circlePoint[1].x - m_circlePoint[0].x)) - atan((m_circlePoint[2].y - m_circlePoint[0].y) / m_circlePoint[2].x - m_circlePoint[0].x);
+
+		double dbDegree = floor((180/pi)*(beetwin_Angle));
+		// 0도 처리 : 0도 위치로 펜을 옮김
+		double x = radius * cos(0.0) + m_circlePoint[0].x;
+		double y = radius * sin(0.0) + m_circlePoint[0].y;
+		dc.MoveTo(x, y);
+
+
+
+		// 원 그리기
+		for (int i = 0; i <= vertex; i++)
+		{
+			double radian = i * 2 * pi / vertex;
+			double x = radius * cos(radian) + m_circlePoint[0].x;
+			double y = radius * sin(radian) + m_circlePoint[0].y;
+
+			dc.LineTo(x, y);
+		}
+		m_circleCnt -= 3;
+	}
+	m_circleCnt++;
+	//dc.Ellipse(startPoint.x, startPoint.y, endPoint.x, endPoint.y); // 원 그리기
+}
+
+void CpictureboardDlg::TriangleDraw(CClientDC& dc, CPoint startPoint, CPoint endPoint)
+{
+	POINT arPoint[] = { startPoint.x, startPoint.y , startPoint.x - 40, endPoint.y + 45, endPoint.x , endPoint.y }; // 삼각형 함수 그리기
+	dc.Polygon(arPoint, 3);
+}
+
+void CpictureboardDlg::StraightDraw(CClientDC& dc, CPoint startPoint, CPoint endPoint)
+{
+
+	dc.MoveTo(startPoint.x, startPoint.y);
+	dc.LineTo(endPoint.x, endPoint.y);
+}
+
+void CpictureboardDlg::PolyLineDraw(CClientDC& dc, CPoint point)
+{
+
+
+	for (int i = 0; i < m_polyLineCnt + 1; i++)
+	{
+
+	}
+
+}
+
+
+
+void CpictureboardDlg::OnSquare()
+{
+	DrawMode(ID_SQUARE, ID_CIRCLE, ID_TRIANGLE, ID_STRAIGHT, ID_POLY, SQUARE);
+}
+
+void CpictureboardDlg::OnCircle()
+{
+	DrawMode(ID_CIRCLE, ID_SQUARE, ID_TRIANGLE, ID_STRAIGHT, ID_POLY, CIRCLE);
+}
+
+void CpictureboardDlg::OnTriangle()
+{
+	DrawMode(ID_TRIANGLE, ID_SQUARE, ID_CIRCLE, ID_STRAIGHT, ID_POLY, TRIANGLE);
+}
+
+void CpictureboardDlg::OnStraight()
+{
+	DrawMode(ID_STRAIGHT, ID_SQUARE, ID_CIRCLE, ID_TRIANGLE, ID_POLY, STRAIGHT);
+}
+
+
+void CpictureboardDlg::OnPolyline()
+{
+	DrawMode(ID_POLY, ID_SQUARE, ID_CIRCLE, ID_TRIANGLE, ID_STRAIGHT, POLYLINE);
+	m_polyLineCnt = 0;
+}
+
+
+void CpictureboardDlg::OnEraser()
+{
+
+}
+
+
 

@@ -3,7 +3,7 @@
 //
 
 #pragma once
-
+#define	TWO 3
 
 // CpictureboardDlg 대화 상자
 class CpictureboardDlg : public CDialogEx
@@ -58,19 +58,22 @@ private:
 	void AreaDraw();// 마우스 드래그시 미리보기
 
 	void SquareDraw(CClientDC &dc, CPoint startPoint, CPoint endPoint);
-	void CircleDraw(CClientDC &dc, CPoint startPoint, CPoint endPoint);
+	void CircleDraw(CClientDC& dc, CPoint point);
 	void TriangleDraw(CClientDC &dc, CPoint startPoint, CPoint endPoint);
 	void StraightDraw(CClientDC &dc,CPoint startPoint, CPoint endPoint);
-	
+	void DrawMode(int id1, int id2, int id3, int id4, int id5, int subid);
 	void OnDropDownMenu(UINT nID);
 	BOOL m_bChecked;
 	CPoint m_prevXY;
 	CPoint m_rect_start_pos;
+	CPoint m_circlePoint[TWO];
+	int m_circleCnt;
 	int m_cx;
 	int m_cy;
 	int m_pos;
 	int m_mainMode;
 	int m_subMode;
+	int m_polyLineCnt;
 	int m_gR;
 	int m_gG;
 	int m_gB;
@@ -83,14 +86,16 @@ private:
 	afx_msg void OnSquare();
 	afx_msg void OnCircle();
 	afx_msg void OnTriangle();
-	void InitCheckButton(int value1, int value2, int value3);
+	void InitCheckButton(int value1, int value2, int value3, int value4);
 	afx_msg void OnStraight();
 	afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint /*point*/);
 	afx_msg void OnImgload();
-	afx_msg void OnReset(CDC* pDC);
+	afx_msg void OnReset();
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	
-	void CpictureboardDlg::ChoiceView();
+	afx_msg void ChoiceColor();
+	afx_msg void PolyLineDraw(CClientDC& dc, CPoint point);
 public:
-	afx_msg void OnColor();
+	afx_msg void OnEraser();
+	afx_msg void OnPolyline();
 };

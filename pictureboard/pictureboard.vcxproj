@@ -209,6 +209,8 @@
     <None Include="res\pictureboard.rc2" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\..\..\Downloads\eraser.ico" />
+    <Image Include="..\..\..\..\Downloads\paint-palette.ico" />
     <Image Include="res\bitmap1.bmp" />
     <Image Include="res\bitmap2.bmp" />
     <Image Include="res\pictureboard.ico" />
